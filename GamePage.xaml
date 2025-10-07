@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiProject.GamePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Игра">
+
+    <VerticalStackLayout Spacing="10" Padding="10">
+
+        <!-- статус -->
+        <Grid ColumnDefinitions="*,Auto" Padding="4,0">
+            <Label x:Name="LblStatus" Text="Игрок: -, Уровень 1/10" />
+            <Label x:Name="LblTime" Grid.Column="1" Text="00:00" />
+        </Grid>
+
+        <!-- превью текущей картинки -->
+        <Image x:Name="ImgPreview" HeightRequest="90" HorizontalOptions="Center" />
+
+        <!-- Пазл: сверху перемешанные куски, снизу целевой грид -->
+        <Grid RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <ScrollView>
+                <Grid x:Name="SourceGrid" Padding="4" ColumnSpacing="2" RowSpacing="2" BackgroundColor="#FFF8E1"/>
+            </ScrollView>
+
+            <ScrollView Grid.Row="1">
+                <Grid x:Name="TargetGrid" Padding="4" ColumnSpacing="2" RowSpacing="2" BackgroundColor="#ECEFF1"/>
+            </ScrollView>
+        </Grid>
+
+        <!-- Вопрос после сборки -->
+        <Frame x:Name="QuestionPanel" IsVisible="false" Padding="12" BackgroundColor="#FAFAFA" BorderColor="#BDBDBD">
+            <VerticalStackLayout Spacing="8">
+                <Label x:Name="LblQuestion" FontSize="16"/>
+                <HorizontalStackLayout Spacing="10">
+                    <Button x:Name="BtnA" Clicked="BtnA_Clicked"/>
+                    <Button x:Name="BtnB" Clicked="BtnB_Clicked"/>
+                    <Button x:Name="BtnNext" Text="Далее →" IsVisible="false" Clicked="BtnNext_Clicked"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Frame>
+
+    </VerticalStackLayout>
+</ContentPage>

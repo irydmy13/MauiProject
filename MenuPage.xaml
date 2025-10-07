@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiProject.MenuPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Меню">
+
+    <VerticalStackLayout Padding="24" Spacing="18" VerticalOptions="Center">
+        <Image Source="puzzle_icon.png" WidthRequest="120" HeightRequest="120" HorizontalOptions="Center"/>
+        <Label Text="Пазл-квест" FontSize="28" HorizontalOptions="Center"/>
+
+        <Button Text="Новая игра" Clicked="NewGame_Clicked" />
+        <Button Text="Рейтинг"    Clicked="Rating_Clicked" />
+        <Button Text="Выход"      Clicked="Exit_Clicked" />
+    </VerticalStackLayout>
+</ContentPage>

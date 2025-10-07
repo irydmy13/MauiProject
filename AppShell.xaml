@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell
+    x:Class="MauiProject.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pages="clr-namespace:MauiProject">
+
+    <!-- Старт: Меню -->
+    <ShellContent Title="Menu"
+                ContentTemplate="{DataTemplate pages:MenuPage}"
+                Route="menu" />
+
+    <ShellContent Title="Game"
+                ContentTemplate="{DataTemplate pages:GamePage}"
+                Route="game" />
+
+    <ShellContent Title="Rating"
+                ContentTemplate="{DataTemplate pages:RatingPage}"
+                Route="rating" />
+</Shell>
