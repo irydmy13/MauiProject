@@ -5,22 +5,30 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Рейтинг">
 
-    <VerticalStackLayout Padding="16" Spacing="12">
-        <Label Text="Лучшие результаты (по времени)" FontSize="22" />
+    <VerticalStackLayout Padding="12" Spacing="12">
+        <Label Text="Лучшие результаты" FontSize="26" />
         <CollectionView x:Name="ScoresView">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="8" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                        <Label Grid.Row="0" Grid.Column="0" Text="{Binding Name}" FontAttributes="Bold" />
-                        <Label Grid.Row="0" Grid.Column="1"
-                   Text="{Binding Time, StringFormat='{}{0:mm\\:ss}'}" />
-                        <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" FontSize="12"
-                   Text="{Binding When, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
-                    </Grid>
+                    <Frame Padding="12" Margin="0,4"
+                 BackgroundColor="{StaticResource Card}"
+                 BorderColor="{StaticResource CardBorder}"
+                 CornerRadius="14" HasShadow="False">
+                        <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
+                            <Label Grid.Row="0" Grid.Column="0" Text="{Binding Name}" FontSize="18" />
+                            <Label Grid.Row="0" Grid.Column="1"
+                     Text="{Binding Time, StringFormat='{}{0:mm\\:ss}'}" />
+                            <Label Grid.Row="0" Grid.Column="2"
+                     Text="{Binding Level, StringFormat='Ур. {0}'}" />
+                            <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" FontSize="12"
+                     TextColor="{StaticResource TextSecondary}"
+                     Text="{Binding When, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
+                        </Grid>
+                    </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <Button Text="Очистить рейтинг" Clicked="Clear_Clicked" />
+        <Button Text="Очистить рейтинг" Style="{StaticResource BtnGhost}" Clicked="Clear_Clicked" />
     </VerticalStackLayout>
 </ContentPage>

@@ -4,11 +4,49 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
     <Application.Resources>
-        <!-- простые динамические ресурсы на будущее -->
-        <Color x:Key="BgColor">#FFFFFF</Color>
-        <Color x:Key="FgColor">#000000</Color>
+        <!-- Палитра -->
+        <Color x:Key="BgSurface">#111318</Color>
+        <Color x:Key="Card">#1E1F25</Color>
+        <Color x:Key="CardBorder">#2B2D36</Color>
+        <Color x:Key="Accent">#6750A4</Color>
+        <Color x:Key="TextPrimary">#FFFFFF</Color>
+        <Color x:Key="TextSecondary">#B8B8C3</Color>
+
+        <!-- Фон страниц -->
         <Style TargetType="ContentPage">
-            <Setter Property="BackgroundColor" Value="{DynamicResource BgColor}" />
+            <Setter Property="BackgroundColor" Value="{StaticResource BgSurface}" />
+        </Style>
+
+        <!-- Заголовки/текст -->
+        <Style TargetType="Label">
+            <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+            <Setter Property="LineBreakMode" Value="TailTruncation" />
+        </Style>
+
+        <!-- Кнопка по умолчанию -->
+        <Style TargetType="Button" x:Key="BtnBase">
+            <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+            <Setter Property="TextColor" Value="White" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="HeightRequest" Value="42" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+
+        <!-- Кнопка-«призрак» (для Назад) -->
+        <Style TargetType="Button" x:Key="BtnGhost" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="BackgroundColor" Value="{StaticResource Card}" />
+            <Setter Property="BorderColor" Value="{StaticResource CardBorder}" />
+            <Setter Property="BorderWidth" Value="1" />
+        </Style>
+
+        <!-- Карточки -->
+        <Style TargetType="Frame" x:Key="CardFrame">
+            <Setter Property="BackgroundColor" Value="{StaticResource Card}" />
+            <Setter Property="BorderColor" Value="{StaticResource CardBorder}" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="HasShadow" Value="False" />
+            <Setter Property="Padding" Value="10" />
         </Style>
     </Application.Resources>
 </Application>

@@ -6,8 +6,9 @@ namespace MauiProject;
 public class ScoreItem
 {
     public string Name { get; set; } = "Player";
-    public TimeSpan Time { get; set; } = TimeSpan.Zero;  // общее врем€ прохождени€
-    public DateTime When { get; set; } = DateTime.Now;   // когда сыграли
+    public int Level { get; set; } = 0;              // <Ч Ќќ¬ќ≈: уровень, на котором завершили
+    public TimeSpan Time { get; set; } = TimeSpan.Zero;
+    public DateTime When { get; set; } = DateTime.Now;
 }
 
 public static class ScoreService
@@ -18,22 +19,21 @@ public static class ScoreService
     {
         var json = Preferences.Get(Key, "");
         if (string.IsNullOrWhiteSpace(json)) return new();
-        try
-        {
-            return JsonSerializer.Deserialize<List<ScoreItem>>(json) ?? new();
-        }
-        catch
-        {
-            return new();
-        }
+        try { return JsonSerializer.Deserialize<List<ScoreItem>>(json) ?? new(); }
+        catch { return new(); }
     }
 
     public static void Add(ScoreItem item)
     {
         var list = GetScores();
         list.Add(item);
-        // рейтинг по возрастанию времени (чем быстрее Ч тем выше)
-        list = list.OrderBy(x => x.Time).ThenBy(x => x.When).ToList();
+        // —начала выше тот, кто дошЄл дальше, при равном уровне Ч быстрее по времени
+        list = list
+            .OrderByDescending(x => x.Level)
+            .ThenBy(x => x.Time)
+            .ThenBy(x => x.When)
+            .ToList();
+
         Preferences.Set(Key, JsonSerializer.Serialize(list));
     }
 
