@@ -3,18 +3,11 @@
     x:Class="MauiProject.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:pages="clr-namespace:MauiProject">
+    xmlns:pages="clr-namespace:MauiProject"
+    FlyoutBehavior="Disabled">
 
-    <!-- Старт: Меню -->
-    <ShellContent Title="Menu"
-                ContentTemplate="{DataTemplate pages:MenuPage}"
-                Route="menu" />
+    <ShellContent Route="menu"   ContentTemplate="{DataTemplate pages:MenuPage}" />
+    <ShellContent Route="game"   ContentTemplate="{DataTemplate pages:GamePage}" />
+    <ShellContent Route="rating" ContentTemplate="{DataTemplate pages:RatingPage}" />
 
-    <ShellContent Title="Game"
-                ContentTemplate="{DataTemplate pages:GamePage}"
-                Route="game" />
-
-    <ShellContent Title="Rating"
-                ContentTemplate="{DataTemplate pages:RatingPage}"
-                Route="rating" />
 </Shell>

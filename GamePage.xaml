@@ -6,70 +6,97 @@
     Title="Игра">
 
     <Grid RowDefinitions="Auto,Auto,*,*"
-        Padding="12"
-        RowSpacing="10">
+          Padding="12"
+          RowSpacing="10">
 
-        <!-- Верхняя панель -->
-        <Grid Grid.Row="0"
-          ColumnDefinitions="*,Auto,Auto,Auto"
-          ColumnSpacing="8"
-          VerticalOptions="Center">
-            <Label x:Name="LblStatus" FontSize="16" />
-            <Button x:Name="BtnUndo" Grid.Column="1" Text="↶ Назад" Clicked="BtnUndo_Clicked"
-              BackgroundColor="#1E1F25" TextColor="White" CornerRadius="14" HeightRequest="40" />
-            <Button x:Name="BtnEnd"  Grid.Column="2" Text="Завершить" Clicked="BtnEnd_Clicked"
-              BackgroundColor="#6750A4" TextColor="White" CornerRadius="14" HeightRequest="40" />
-            <Label x:Name="LblTime"  Grid.Column="3" FontSize="18"
-             HorizontalTextAlignment="End" VerticalTextAlignment="Center"/>
+        <Label Grid.Row="0" x:Name="LblStatus" FontSize="16" />
+
+        <!-- Ряд: слева превью, справа кнопки -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <!-- Превью -->
+            <Frame Grid.Column="0" Padding="8" BackgroundColor="#1E1F25" BorderColor="#2B2D36"
+                   CornerRadius="16" HasShadow="False">
+                <Image x:Name="ImgPreview" HeightRequest="110" Aspect="AspectFill" />
+            </Frame>
+
+            <!-- Столбик с кнопками и таймером -->
+            <VerticalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                <Button x:Name="BtnUndo" Text="↶ Назад"
+                        Clicked="BtnUndo_Clicked"
+                        BackgroundColor="LightBlue" TextColor="Black"
+                        CornerRadius="14" HeightRequest="40" WidthRequest="140"/>
+                <Button x:Name="BtnEnd"  Text="Завершить"
+                        Clicked="BtnEnd_Clicked"
+                        BackgroundColor="LightCoral" TextColor="Black"
+                        CornerRadius="14" HeightRequest="40" WidthRequest="140"/>
+                <Label  x:Name="LblTime" FontSize="20"
+                        HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
         </Grid>
 
-        <!-- Превью -->
-        <Frame Grid.Row="1" Padding="8" BackgroundColor="#1E1F25" BorderColor="#2B2D36"
-           CornerRadius="16" HasShadow="False">
-            <Image x:Name="ImgPreview" HeightRequest="100" Aspect="AspectFill" HorizontalOptions="Center" />
-        </Frame>
-
-        <!-- Источник: FlexLayout + оверлей вопроса -->
+        <!-- Источник: FlexLayout + ОВЕРЛЕЙ ВОПРОСА -->
         <Frame Grid.Row="2" Padding="0" BackgroundColor="#1E1F25" BorderColor="#2B2D36"
-           CornerRadius="16" HasShadow="False">
-            <Grid x:Name="SourceHost">
+               CornerRadius="16" HasShadow="False">
+            <!-- Контейнер-слой -->
+            <Grid x:Name="SourceHost" BackgroundColor="Transparent">
                 <ScrollView>
                     <FlexLayout x:Name="SourcePanel"
-                      Padding="8"
-                      Wrap="Wrap"
-                      Direction="Row"
-                      JustifyContent="Start"
-                      AlignItems="Start"
-                      AlignContent="Start"
-                      BackgroundColor="#FFF8E1"/>
+                                Padding="8"
+                                Wrap="Wrap"
+                                Direction="Row"
+                                JustifyContent="Start"
+                                AlignItems="Start"
+                                AlignContent="Start"
+                                BackgroundColor="#FFF8E1"/>
                 </ScrollView>
 
-                <!-- ВОПРОС поверх SourcePanel -->
-                <Grid x:Name="QuestionOverlay" IsVisible="false" BackgroundColor="#66000000">
-                    <Frame Padding="14" BackgroundColor="White" BorderColor="#BDBDBD"
-                 CornerRadius="16" HasShadow="False"
-                 HorizontalOptions="Center" VerticalOptions="Center">
-                        <VerticalStackLayout Spacing="10">
-                            <Label x:Name="LblQuestion" TextColor="Black" FontSize="16"
-                     HorizontalTextAlignment="Center" />
+                <!-- !!! ВОПРОС поверх жёлтой зоны !!! -->
+                <Grid x:Name="QuestionOverlay"
+                      IsVisible="false"
+                      BackgroundColor="#66000000"
+                      ZIndex="10"
+                      InputTransparent="False"
+                      HorizontalOptions="Fill"
+                      VerticalOptions="Fill">
+                    <Frame Padding="14"
+                           BackgroundColor="White"
+                           BorderColor="#BDBDBD"
+                           CornerRadius="16"
+                           HasShadow="False"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center">
+                        <VerticalStackLayout Spacing="10" WidthRequest="280">
+                            <Label x:Name="LblQuestion"
+                                   TextColor="Black"
+                                   FontSize="16"
+                                   HorizontalTextAlignment="Center" />
                             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                <Button x:Name="BtnA" Grid.Column="0" Clicked="BtnA_Clicked"
-                        BackgroundColor="#EFEFEF" TextColor="Black" CornerRadius="12" />
-                                <Button x:Name="BtnB" Grid.Column="1" Clicked="BtnB_Clicked"
-                        BackgroundColor="#EFEFEF" TextColor="Black" CornerRadius="12" />
+                                <Button x:Name="BtnA" Grid.Column="0"
+                                        Clicked="BtnA_Clicked"
+                                        BackgroundColor="#EFEFEF" TextColor="Black"
+                                        CornerRadius="12" />
+                                <Button x:Name="BtnB" Grid.Column="1"
+                                        Clicked="BtnB_Clicked"
+                                        BackgroundColor="#EFEFEF" TextColor="Black"
+                                        CornerRadius="12" />
                             </Grid>
-                            <Button x:Name="BtnNext" Text="Далее →" IsVisible="false"
-                      BackgroundColor="#6750A4" TextColor="White" CornerRadius="14"
-                      HorizontalOptions="End" Clicked="BtnNext_Clicked"/>
+                            <Button x:Name="BtnNext"
+                                    Text="Далее →"
+                                    IsVisible="false"
+                                    BackgroundColor="#6750A4"
+                                    TextColor="White"
+                                    CornerRadius="14"
+                                    HorizontalOptions="End"
+                                    Clicked="BtnNext_Clicked"/>
                         </VerticalStackLayout>
                     </Frame>
                 </Grid>
             </Grid>
         </Frame>
 
-        <!-- Цель: контейнер; 7×7 клеток создадим один раз в коде -->
+        <!-- Цель: поле пазла -->
         <Frame Grid.Row="3" Padding="0" BackgroundColor="#1E1F25" BorderColor="#2B2D36"
-           CornerRadius="16" HasShadow="False">
+               CornerRadius="16" HasShadow="False">
             <Grid x:Name="TargetHost" />
         </Frame>
 

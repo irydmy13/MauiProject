@@ -13,21 +13,23 @@ public partial class GamePage : ContentPage
     // ====== общие настройки ======
     private const int MaxRows = 7;
     private const int MaxCols = 7;
-    private const double PieceSize = 96; // размер кусочка в px
+    private const int LevelsCount = 5;     // игра на 5 уровней
+    private const double PieceSize = 96;   // размер кусочка
 
     // ====== состояние ======
     public string PlayerName { get; set; } = "Player";
     private Player _player = new("Player");
     private readonly Stopwatch _sw = new();
     private bool _timerRunning;
+    private bool _timerLoopActive = false;
+    private bool _questionShowing = false;
 
-    private int _rows, _cols;      // активный размер уровня
-    private int _levelIndex = 0;   // 0..9
+    private int _rows, _cols;
+    private int _levelIndex = 0;   // 0..LevelsCount-1
 
     private readonly (int rows, int cols)[] _difficulty =
     {
-        (2,2),(2,3),(3,3),(3,4),(4,4),
-        (4,5),(5,5),(5,6),(6,6),(6,7)
+        (2,2), (2,3), (3,3), (3,4), (4,4)   // 5 уровней
     };
 
     private readonly string[] _imagePool =
@@ -40,7 +42,7 @@ public partial class GamePage : ContentPage
 
     // пазл
     private readonly Dictionary<string, Image> _pieces = new();              // id -> Image
-    private readonly Dictionary<(int r, int c), string> _correct = new();     // верный id для ячейки
+    private readonly Dictionary<(int r, int c), string> _correct = new();    // верный id для ячейки
     private Image? _selectedPiece;
 
     // поле (цель) — создаём один раз
@@ -83,7 +85,7 @@ public partial class GamePage : ContentPage
         // инициализируем один раз матрицу цели и обработчики
         InitBoardsOnce();
 
-        // жесты для возврата в источник
+        // возврат в источник DnD
         SourceHost.GestureRecognizers.Add(new DropGestureRecognizer
         {
             AllowDrop = true,
@@ -99,7 +101,8 @@ public partial class GamePage : ContentPage
             })
         });
 
-        var tapSource = new TapGestureRecognizer
+        // тап по источнику — положить выбранный кусок
+        SourcePanel.GestureRecognizers.Add(new TapGestureRecognizer
         {
             Command = new Command(() =>
             {
@@ -110,8 +113,45 @@ public partial class GamePage : ContentPage
                     _selectedPiece = null;
                 }
             })
-        };
-        SourcePanel.GestureRecognizers.Add(tapSource);
+        });
+    }
+
+    // ====== Показ вопроса только когда поле собрано и верхняя панель пуста ======
+    private bool IsBoardSolved()
+    {
+        for (int r = 0; r < _rows; r++)
+            for (int c = 0; c < _cols; c++)
+            {
+                var cell = _cells[r, c];
+                if (cell.Content is not Image img) return false;
+                if (img.AutomationId != _correct[(r, c)]) return false;
+            }
+        return true;
+    }
+
+    private bool IsSourceEmpty() => SourcePanel.Children.Count == 0;
+
+    private bool IsReadyForQuestion() => IsBoardSolved() && IsSourceEmpty();
+
+    private void TryShowQuestionIfSolved()
+    {
+        if (_questionShowing || QuestionOverlay.IsVisible) return;
+
+        Device.BeginInvokeOnMainThread(async () =>
+        {
+            // даём UI один тик применить изменения после Drop/Tap/ScaleTo
+            await Task.Delay(30);
+
+            if (_questionShowing || QuestionOverlay.IsVisible) return;
+            if (!IsReadyForQuestion()) return;   // ← оба условия: поле верно + источник пуст
+
+            // гарантируем, что слой сверху и растянут
+            QuestionOverlay.ZIndex = 100;
+            QuestionOverlay.HorizontalOptions = LayoutOptions.Fill;
+            QuestionOverlay.VerticalOptions = LayoutOptions.Fill;
+
+            ShowQuestion();
+        });
     }
 
     protected override void OnAppearing()
@@ -130,7 +170,7 @@ public partial class GamePage : ContentPage
     // ====== старт новой игры ======
     private void StartNewRun()
     {
-        _levelImages = _imagePool.OrderBy(_ => _rnd.Next()).Take(10).ToArray();
+        _levelImages = _imagePool.OrderBy(_ => _rnd.Next()).Take(LevelsCount).ToArray(); // 5 картинок
         _levelIndex = 0;
 
         _sw.Reset();
@@ -143,9 +183,12 @@ public partial class GamePage : ContentPage
 
     private void StartTimerLoop()
     {
+        if (_timerLoopActive) return;
+        _timerLoopActive = true;
+
         Device.StartTimer(TimeSpan.FromSeconds(1), () =>
         {
-            if (!_timerRunning) return false;
+            if (!_timerRunning) { _timerLoopActive = false; return false; }
             LblTime.Text = $"{(int)_sw.Elapsed.TotalMinutes:00}:{_sw.Elapsed.Seconds:00}";
             return true;
         });
@@ -188,61 +231,68 @@ public partial class GamePage : ContentPage
         TargetHost.Children.Add(grid);
     }
 
-    // ====== загрузка уровня (без перестройки сеток) ======
+    // ====== загрузка уровня ======
     private async void LoadLevel(int index)
     {
         (_rows, _cols) = _difficulty[index];
         var imgName = _levelImages[index];
 
-        LblStatus.Text = $"Игрок: {_player.Name}, Уровень {index + 1}/10  ({_rows}×{_cols})";
+        LblStatus.Text = $"Игрок: {_player.Name}, Уровень {index + 1}/{LevelsCount}  ({_rows}×{_cols})";
         ImgPreview.Source = imgName;
 
         // верхняя зона не схлопывается
         SourceHost.HeightRequest = Math.Max(220, _rows * (PieceSize + 12));
 
-        // активируем нужное число ячеек и чистим их
+        // активируем нужные ячейки и чистим их
         for (int r = 0; r < MaxRows; r++)
             for (int c = 0; c < MaxCols; c++)
             {
                 var active = r < _rows && c < _cols;
                 var cell = _cells[r, c];
                 cell.IsVisible = active;
-                if (!active) cell.Content = null;
-                else cell.Content = null;
+                cell.Content = null;
             }
 
         _pieces.Clear();
         _correct.Clear();
         _undo.Clear();
         _selectedPiece = null;
-
         QuestionOverlay.IsVisible = false;
         BtnNext.IsVisible = false;
 
-        // режем картинку и создаём кусочки
-        using var stream = await FileSystem.OpenAppPackageFileAsync(imgName);
-        var parts = SplitImageFromStream(stream, _rows, _cols);
+        // === нарезка в фоне ===
+        List<byte[]> pieceBytes;
+        try
+        {
+            using var stream = await FileSystem.OpenAppPackageFileAsync(imgName);
+            pieceBytes = await Task.Run(() => SplitAndResizeToBytes(stream, _rows, _cols, (int)PieceSize));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ошибка", $"Не удалось загрузить картинку: {ex.Message}", "ОК");
+            return;
+        }
 
-        // создаём кусочки с id согласно верной позиции (row-major)
+        // === создаём кусочки на UI ===
         var created = new List<Image>();
         int k = 0;
         for (int r = 0; r < _rows; r++)
             for (int c = 0; c < _cols; c++)
             {
                 var id = $"piece_{r + 1}_{c + 1}";
-                var img = CreatePieceImage(parts[k++], id);
+                var src = ImageSource.FromStream(() => new MemoryStream(pieceBytes[k++]));
+                var img = CreatePieceImage(src, id);
                 _pieces[id] = img;
                 _correct[(r, c)] = id;
                 created.Add(img);
             }
 
-        // перемешиваем и добавляем в FlexLayout
         SourcePanel.Children.Clear();
         foreach (var img in created.OrderBy(_ => _rnd.Next()))
             SourcePanel.Children.Add(img);
     }
 
-    // ====== обработчики цели (устанавливаются один раз на каждую ячейку) ======
+    // ====== обработчики цели ======
     private void AttachTargetHandlers(Border target)
     {
         // drop с обменом
@@ -259,9 +309,9 @@ public partial class GamePage : ContentPage
                         PlacePieceIntoTarget(piece, target, displacedGoesToSource: true);
                         _undo.Push(action);
 
-                        await piece.ScaleTo(1.06, 90);
-                        await piece.ScaleTo(1.00, 90);
-                        if (CheckWin()) ShowQuestion();
+                        await piece.ScaleTo(1.02, 60);
+                        await piece.ScaleTo(1.00, 60);
+                        Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
                     }
                 }
             })
@@ -281,9 +331,9 @@ public partial class GamePage : ContentPage
                     _selectedPiece.Opacity = 1.0;
                     _selectedPiece = null;
 
-                    await target.ScaleTo(1.03, 80);
-                    await target.ScaleTo(1.00, 80);
-                    if (CheckWin()) ShowQuestion();
+                    await target.ScaleTo(1.02, 60);
+                    await target.ScaleTo(1.00, 60);
+                    Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
                 }
                 else if (target.Content is Image imgInside)
                 {
@@ -295,7 +345,7 @@ public partial class GamePage : ContentPage
         });
     }
 
-    // ====== создание кусочка с общими жестами ======
+    // ====== создание кусочка ======
     private Image CreatePieceImage(ImageSource src, string id)
     {
         var img = new Image
@@ -325,23 +375,15 @@ public partial class GamePage : ContentPage
         return img;
     }
 
-    // ====== проверка победы ======
-    private bool CheckWin()
-    {
-        for (int r = 0; r < _rows; r++)
-            for (int c = 0; c < _cols; c++)
-            {
-                var cell = _cells[r, c];
-                if (cell.Content is not Image img) return false;
-                if (img.AutomationId != _correct[(r, c)]) return false;
-            }
-        return true;
-    }
-
-    // ====== вопрос (оверлей в верхней зоне) ======
+    // ====== вопрос ======
     private void ShowQuestion()
     {
+        if (_questionShowing) return;
+        _questionShowing = true;
+
+        QuestionOverlay.IsVisible = true;  // включаем сразу (в зоне SourcePanel)
         _timerRunning = false;
+
         _currentQuestion = _questions[_rnd.Next(_questions.Count)];
         LblQuestion.Text = _currentQuestion.Text;
         BtnA.Text = _currentQuestion.OptionA;
@@ -354,7 +396,6 @@ public partial class GamePage : ContentPage
 
         SourceHost.IsEnabled = false;
         TargetHost.IsEnabled = false;
-        QuestionOverlay.IsVisible = true;
     }
 
     private void BtnA_Clicked(object sender, EventArgs e) => HandleAnswer('A', (Button)sender, BtnB);
@@ -380,10 +421,12 @@ public partial class GamePage : ContentPage
         QuestionOverlay.IsVisible = false;
         SourceHost.IsEnabled = true;
         TargetHost.IsEnabled = true;
+        _questionShowing = false;
         _timerRunning = true;
         StartTimerLoop();
 
-        if (_levelIndex == 9)
+        // финал при LevelsCount
+        if (_levelIndex == LevelsCount - 1)
         {
             _timerRunning = false;
             _sw.Stop();
@@ -393,7 +436,7 @@ public partial class GamePage : ContentPage
                 $"{_player.Name}, время: {(int)total.TotalMinutes:00}:{total.Seconds:00}",
                 "OK");
 
-            ScoreService.Add(new ScoreItem { Name = _player.Name, Level = 10, Time = total, When = DateTime.Now });
+            ScoreService.Add(new ScoreItem { Name = _player.Name, Level = LevelsCount, Time = total, When = DateTime.Now });
             await Shell.Current.GoToAsync("//rating");
             return;
         }
@@ -414,7 +457,7 @@ public partial class GamePage : ContentPage
         _sw.Stop();
 
         var total = _sw.Elapsed;
-        var reached = _levelIndex + 1;
+        var reached = _levelIndex + 1; // 1..LevelsCount
 
         ScoreService.Add(new ScoreItem
         {
@@ -431,30 +474,29 @@ public partial class GamePage : ContentPage
         await Shell.Current.GoToAsync("//rating");
     }
 
-    // ====== «Назад» (полный откат последнего шага) ======
-    private void BtnUndo_Clicked(object sender, EventArgs e)
+    // ====== «Назад» (безопасный откат) ======
+    private void BtnUndo_Clicked(object? sender, EventArgs e)
     {
         if (QuestionOverlay.IsVisible) return;
         if (_undo.Count == 0) return;
 
         var a = _undo.Pop();
 
-        // убрать наш кусок из новой цели
-        if (a.ToCell.Content is Image placed && placed == a.Piece)
-            a.ToCell.Content = null;
-        else
-            DetachFromParent(a.Piece);
+        // 1) убрать наш кусок из новой цели (или где бы он ни был)
+        if (a.ToCell.Content == a.Piece) a.ToCell.Content = null;
+        else DetachFromParent(a.Piece);
 
-        // вернуть вытесненного обратно в новую цель
+        // 2) вернуть вытеснённого обратно в эту цель
         if (a.Displaced != null)
         {
             DetachFromParent(a.Displaced);
             a.ToCell.Content = a.Displaced;
         }
 
-        // вернуть наш кусок туда, откуда он пришёл
+        // 3) вернуть наш кусок туда, откуда он пришёл
         if (a.From == FromKind.Target && a.FromCell != null)
         {
+            if (a.FromCell.Content is View v && v != a.Piece) DetachFromParent(v);
             a.FromCell.Content = a.Piece;
         }
         else
@@ -465,19 +507,29 @@ public partial class GamePage : ContentPage
         if (_selectedPiece == a.Piece) { _selectedPiece.Opacity = 1; _selectedPiece = null; }
     }
 
-    // ====== вспомогалки ======
+    // ====== вспомогалки (безопасные) ======
     private void PlaceInSourcePanel(Image img)
     {
+        if (img.Parent == SourcePanel) return; // уже там
         DetachFromParent(img);
         SourcePanel.Children.Add(img);
     }
 
-    private static void DetachFromParent(Image img)
+    // универсальный безопасный detach (Grid/Flex/Border)
+    private static void DetachFromParent(View v)
     {
-        if (img.Parent is Layout layout)
-            layout.Children.Remove(img);
-        else if (img.Parent is ContentView cv)
-            cv.Content = null;
+        if (v.Parent is ContentView cv)
+        {
+            if (cv.Content == v) cv.Content = null;
+            return;
+        }
+        if (v.Parent is Layout layout)
+        {
+            if (layout.Children.Contains(v))
+                layout.Children.Remove(v);
+            return;
+        }
+        // если родителей нет — ок
     }
 
     private MoveAction CaptureActionBeforePlace(Image piece, Border to)
@@ -485,14 +537,13 @@ public partial class GamePage : ContentPage
         FromKind from = FromKind.Source;
         Border? fromCell = null;
 
-        // проверяем, не стоит ли уже в какой-то цели
         for (int r = 0; r < MaxRows; r++)
             for (int c = 0; c < MaxCols; c++)
                 if (_cells[r, c].Content == piece)
                 {
                     from = FromKind.Target;
                     fromCell = _cells[r, c];
-                    break;
+                    r = MaxRows; break;
                 }
 
         return new MoveAction
@@ -516,33 +567,33 @@ public partial class GamePage : ContentPage
             PlaceInSourcePanel(displaced);
     }
 
-    // ====== нарезка изображения ======
-    public static List<ImageSource> SplitImageFromStream(Stream input, int rows, int cols)
+    // ====== нарезка изображения (оптимизировано) ======
+    private static List<byte[]> SplitAndResizeToBytes(Stream input, int rows, int cols, int pieceSizePx)
     {
-        var result = new List<ImageSource>();
-        using var bitmap = SKBitmap.Decode(input);
+        using var original = SKBitmap.Decode(input);
+        if (original == null) throw new Exception("SKBitmap.Decode вернул null");
 
-        int pieceWidth = bitmap.Width / cols;
-        int pieceHeight = bitmap.Height / rows;
+        int targetW = cols * pieceSizePx;
+        int targetH = rows * pieceSizePx;
+
+        using var scaled = original.Resize(new SKImageInfo(targetW, targetH), SKFilterQuality.Medium)
+                         ?? original;
+
+        var result = new List<byte[]>(rows * cols);
+        int pieceW = targetW / cols;
+        int pieceH = targetH / rows;
+
+        using var scaledImage = SKImage.FromBitmap(scaled);
 
         for (int r = 0; r < rows; r++)
             for (int c = 0; c < cols; c++)
             {
-                var rect = new SkiaSharp.SKRectI(
-                    c * pieceWidth, r * pieceHeight,
-                    (c + 1) * pieceWidth, (r + 1) * pieceHeight
-                );
-
-                using var piece = new SkiaSharp.SKBitmap(rect.Width, rect.Height);
-                using (var canvas = new SkiaSharp.SKCanvas(piece))
-                    canvas.DrawBitmap(bitmap, rect, new SkiaSharp.SKRect(0, 0, rect.Width, rect.Height));
-
-                using var image = SkiaSharp.SKImage.FromBitmap(piece);
-                using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
-                var bytes = data.ToArray();
-
-                result.Add(ImageSource.FromStream(() => new MemoryStream(bytes)));
+                var srcRect = new SKRectI(c * pieceW, r * pieceH, (c + 1) * pieceW, (r + 1) * pieceH);
+                using var subset = scaledImage.Subset(srcRect);
+                using var data = subset.Encode(SKEncodedImageFormat.Png, 90);
+                result.Add(data.ToArray());
             }
+
         return result;
     }
 }
