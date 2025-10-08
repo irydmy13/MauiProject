@@ -3,19 +3,19 @@
     x:Class="MauiProject.GamePage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Игра">
+    Title="Пазл-Квест">
 
     <Grid RowDefinitions="Auto,Auto,*,*"
-          Padding="12"
+          Padding="20"
           RowSpacing="10">
 
-        <Label Grid.Row="0" x:Name="LblStatus" FontSize="16" />
+        <Label Grid.Row="0" x:Name="LblStatus" FontSize="15" />
 
         <!-- Ряд: слева превью, справа кнопки -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
             <!-- Превью -->
-            <Frame Grid.Column="0" Padding="8" BackgroundColor="#1E1F25" BorderColor="#2B2D36"
-                   CornerRadius="16" HasShadow="False">
+            <Frame Grid.Column="0" Padding="2" BackgroundColor="Black" BorderColor="#2B2D36"
+                   CornerRadius="18" HasShadow="False">
                 <Image x:Name="ImgPreview" HeightRequest="110" Aspect="AspectFill" />
             </Frame>
 

@@ -1,16 +1,99 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="MauiProject.MenuPage"
+    x:Class="MauiProject.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Меню">
+    Title="Меню"
+    BackgroundImageSource="bg_menu.jpg">
 
-    <VerticalStackLayout Padding="24" Spacing="18" VerticalOptions="Center">
-        <Image Source="puzzle_icon.png" WidthRequest="120" HeightRequest="120" HorizontalOptions="Center"/>
-        <Label Text="Пазл-квест" FontSize="28" HorizontalOptions="Center"/>
+    <ContentPage.Resources>
+        <ResourceDictionary>
 
-        <Button Text="Новая игра" Clicked="NewGame_Clicked" />
-        <Button Text="Рейтинг"    Clicked="Rating_Clicked" />
-        <Button Text="Выход"      Clicked="Exit_Clicked" />
-    </VerticalStackLayout>
+            <!-- Стиль большой кнопки меню -->
+            <Style x:Key="MenuButton" TargetType="Button">
+                <Setter Property="HeightRequest" Value="56" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="FontSize" Value="18" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="Background" >
+                    <Setter.Value>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#6A5AE0" Offset="0" />
+                            <GradientStop Color="#8A7FF0" Offset="1" />
+                        </LinearGradientBrush>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Padding" Value="18,12"/>
+                <Setter Property="Shadow">
+                    <Setter.Value>
+                        <Shadow Brush="#77000000" Offset="0,4" Radius="12" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="VisualStateManager.VisualStateGroups">
+                    <Setter.Value>
+                        <VisualStateGroupList>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Property="Scale" Value="0.98"/>
+                                        <Setter Property="Opacity" Value="0.92"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateGroupList>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Полупрозрачная карточка по центру -->
+            <Style x:Key="Card" TargetType="Frame">
+                <Setter Property="Padding" Value="24" />
+                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="HasShadow" Value="False" />
+                <Setter Property="BackgroundColor" Value="#B3000000" />
+                <Setter Property="BorderColor" Value="#40FFFFFF" />
+            </Style>
+
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
+        <!-- Кнопка-иконка музыки в правом верхнем углу -->
+        <Grid Padding="16"
+              RowDefinitions="Auto,*"
+              ColumnDefinitions="*,Auto">
+            <ImageButton Grid.Row="0" Grid.Column="1"
+                         x:Name="BtnMusic"
+                         Source="music_on.png"
+                         BackgroundColor="#55000000"
+                         CornerRadius="24"
+                         Padding="10"
+                         Clicked="BtnMusic_Clicked" />
+
+            <!-- Центральная карточка с кнопками -->
+            <Frame Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Card}"
+                   VerticalOptions="Center" HorizontalOptions="Center">
+                <VerticalStackLayout Spacing="14" WidthRequest="300">
+                    <Label Text="ПАЗЛ-КВЕСТ"
+                           FontSize="28" FontAttributes="Bold"
+                           HorizontalTextAlignment="Center"
+                           TextColor="White" />
+
+                    <Button Text="Новая игра"
+                            Style="{StaticResource MenuButton}"
+                            Clicked="NewGame_Clicked"/>
+
+                    <Button Text="Рейтинг"
+                            Style="{StaticResource MenuButton}"
+                            Clicked="Rating_Clicked"/>
+
+                    <Button Text="Выход"
+                            Style="{StaticResource MenuButton}"
+                            BackgroundColor="#E04D5A"
+                            Clicked="Exit_Clicked"/>
+                </VerticalStackLayout>
+            </Frame>
+        </Grid>
+    </Grid>
 </ContentPage>

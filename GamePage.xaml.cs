@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Maui.Storage;
 using SkiaSharp;
 
@@ -10,28 +12,32 @@ namespace MauiProject;
 [QueryProperty(nameof(PlayerName), "playerName")]
 public partial class GamePage : ContentPage
 {
-    // ====== общие настройки ======
+    // === настройки ===
     private const int MaxRows = 7;
     private const int MaxCols = 7;
-    private const int LevelsCount = 5;     // игра на 5 уровней
-    private const double PieceSize = 96;   // размер кусочка
+    private const int LevelsCount = 5;      // игра на 5 уровней
+    private const double PieceSize = 96;    // размер кусочка (px)
 
-    // ====== состояние ======
+    // === состояние ===
     public string PlayerName { get; set; } = "Player";
     private Player _player = new("Player");
     private readonly Stopwatch _sw = new();
     private bool _timerRunning;
-    private bool _timerLoopActive = false;
-    private bool _questionShowing = false;
+    private bool _timerLoopActive;
+    private bool _questionShowing;
 
     private int _rows, _cols;
-    private int _levelIndex = 0;   // 0..LevelsCount-1
+    private int _levelIndex;                // 0..LevelsCount-1
+
+    // Сколько кусочков сейчас лежит в SourcePanel (считаем по событиям)
+    private int _leftInSource = 0;
 
     private readonly (int rows, int cols)[] _difficulty =
     {
-        (2,2), (2,3), (3,3), (3,4), (4,4)   // 5 уровней
+        (1,2), (2,3), (3,4), (4,5), (5,6)
     };
 
+    // имена картинок в Resources/Images И Resources/raw
     private readonly string[] _imagePool =
     {
         "p1.png","p2.png","p3.png","p4.png","p5.png",
@@ -66,7 +72,7 @@ public partial class GamePage : ContentPage
     };
     private Question _currentQuestion = new("", "", "", 'A');
 
-    // ====== UNDO ======
+    // Undo
     private enum FromKind { Source, Target }
     private sealed class MoveAction
     {
@@ -74,7 +80,7 @@ public partial class GamePage : ContentPage
         public Border ToCell = null!;
         public Image? Displaced;
         public FromKind From;
-        public Border? FromCell; // если шли из целевой ячейки
+        public Border? FromCell;
     }
     private readonly Stack<MoveAction> _undo = new();
 
@@ -82,10 +88,22 @@ public partial class GamePage : ContentPage
     {
         InitializeComponent();
 
-        // инициализируем один раз матрицу цели и обработчики
+        // поле-сетка создаётся один раз
         InitBoardsOnce();
 
-        // возврат в источник DnD
+        // Подсчёт кусков через события верхней панели
+        SourcePanel.ChildAdded += (_, e) =>
+        {
+            if (e.Element is Image) _leftInSource++;
+            Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
+        };
+        SourcePanel.ChildRemoved += (_, e) =>
+        {
+            if (e.Element is Image) _leftInSource--;
+            Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
+        };
+
+        // Drop на верхнюю зону — вернуть кусок в источник
         SourceHost.GestureRecognizers.Add(new DropGestureRecognizer
         {
             AllowDrop = true,
@@ -101,7 +119,7 @@ public partial class GamePage : ContentPage
             })
         });
 
-        // тап по источнику — положить выбранный кусок
+        // Тап по SourcePanel — кладём выбранный кусок обратно
         SourcePanel.GestureRecognizers.Add(new TapGestureRecognizer
         {
             Command = new Command(() =>
@@ -113,44 +131,6 @@ public partial class GamePage : ContentPage
                     _selectedPiece = null;
                 }
             })
-        });
-    }
-
-    // ====== Показ вопроса только когда поле собрано и верхняя панель пуста ======
-    private bool IsBoardSolved()
-    {
-        for (int r = 0; r < _rows; r++)
-            for (int c = 0; c < _cols; c++)
-            {
-                var cell = _cells[r, c];
-                if (cell.Content is not Image img) return false;
-                if (img.AutomationId != _correct[(r, c)]) return false;
-            }
-        return true;
-    }
-
-    private bool IsSourceEmpty() => SourcePanel.Children.Count == 0;
-
-    private bool IsReadyForQuestion() => IsBoardSolved() && IsSourceEmpty();
-
-    private void TryShowQuestionIfSolved()
-    {
-        if (_questionShowing || QuestionOverlay.IsVisible) return;
-
-        Device.BeginInvokeOnMainThread(async () =>
-        {
-            // даём UI один тик применить изменения после Drop/Tap/ScaleTo
-            await Task.Delay(30);
-
-            if (_questionShowing || QuestionOverlay.IsVisible) return;
-            if (!IsReadyForQuestion()) return;   // ← оба условия: поле верно + источник пуст
-
-            // гарантируем, что слой сверху и растянут
-            QuestionOverlay.ZIndex = 100;
-            QuestionOverlay.HorizontalOptions = LayoutOptions.Fill;
-            QuestionOverlay.VerticalOptions = LayoutOptions.Fill;
-
-            ShowQuestion();
         });
     }
 
@@ -167,10 +147,10 @@ public partial class GamePage : ContentPage
         base.OnDisappearing();
     }
 
-    // ====== старт новой игры ======
+    // ====== запуск новой игры ======
     private void StartNewRun()
     {
-        _levelImages = _imagePool.OrderBy(_ => _rnd.Next()).Take(LevelsCount).ToArray(); // 5 картинок
+        _levelImages = _imagePool.OrderBy(_ => _rnd.Next()).Take(LevelsCount).ToArray();
         _levelIndex = 0;
 
         _sw.Reset();
@@ -194,7 +174,7 @@ public partial class GamePage : ContentPage
         });
     }
 
-    // ====== инициализация поля 7×7 (один раз) ======
+    // ====== сетка цели (7×7) один раз ======
     private void InitBoardsOnce()
     {
         var grid = new Grid
@@ -241,9 +221,9 @@ public partial class GamePage : ContentPage
         ImgPreview.Source = imgName;
 
         // верхняя зона не схлопывается
-        SourceHost.HeightRequest = Math.Max(220, _rows * (PieceSize + 12));
+        SourceHost.HeightRequest = Math.Max(220.0, _rows * (PieceSize + 12));
 
-        // активируем нужные ячейки и чистим их
+        // активируем нужные ячейки и очищаем их
         for (int r = 0; r < MaxRows; r++)
             for (int c = 0; c < MaxCols; c++)
             {
@@ -260,7 +240,7 @@ public partial class GamePage : ContentPage
         QuestionOverlay.IsVisible = false;
         BtnNext.IsVisible = false;
 
-        // === нарезка в фоне ===
+        // нарезка в фоне
         List<byte[]> pieceBytes;
         try
         {
@@ -273,7 +253,7 @@ public partial class GamePage : ContentPage
             return;
         }
 
-        // === создаём кусочки на UI ===
+        // создаём кусочки
         var created = new List<Image>();
         int k = 0;
         for (int r = 0; r < _rows; r++)
@@ -287,15 +267,17 @@ public partial class GamePage : ContentPage
                 created.Add(img);
             }
 
+        // заполняем источник
         SourcePanel.Children.Clear();
+        _leftInSource = 0; // счётчик заполнится сам событиями ChildAdded
         foreach (var img in created.OrderBy(_ => _rnd.Next()))
             SourcePanel.Children.Add(img);
     }
 
-    // ====== обработчики цели ======
+    // ====== обработчики целевых ячеек ======
     private void AttachTargetHandlers(Border target)
     {
-        // drop с обменом
+        // DnD с обменом
         target.GestureRecognizers.Add(new DropGestureRecognizer
         {
             AllowDrop = true,
@@ -311,13 +293,14 @@ public partial class GamePage : ContentPage
 
                         await piece.ScaleTo(1.02, 60);
                         await piece.ScaleTo(1.00, 60);
+
                         Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
                     }
                 }
             })
         });
 
-        // tap: поставить выбранный / забрать кусок
+        // TAP: поставить выбранный / забрать кусок
         target.GestureRecognizers.Add(new TapGestureRecognizer
         {
             Command = new Command(async () =>
@@ -333,6 +316,7 @@ public partial class GamePage : ContentPage
 
                     await target.ScaleTo(1.02, 60);
                     await target.ScaleTo(1.00, 60);
+
                     Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
                 }
                 else if (target.Content is Image imgInside)
@@ -375,13 +359,51 @@ public partial class GamePage : ContentPage
         return img;
     }
 
+    // ====== проверка победы ======
+    private bool IsBoardSolved()
+    {
+        for (int r = 0; r < _rows; r++)
+            for (int c = 0; c < _cols; c++)
+            {
+                var cell = _cells[r, c];
+                if (cell.Content is not Image img) return false;
+                if (img.AutomationId != _correct[(r, c)]) return false;
+            }
+        return true;
+    }
+    private bool IsReadyForQuestion() => _leftInSource == 0 && IsBoardSolved();
+
+    // надёжный показ вопроса (с микро-паузой)
+    private void TryShowQuestionIfSolved()
+    {
+        if (_questionShowing || QuestionOverlay.IsVisible) return;
+
+        Device.BeginInvokeOnMainThread(async () =>
+        {
+            for (int i = 0; i < 3; i++) // до ~120мс
+            {
+                if (IsReadyForQuestion()) break;
+                await Task.Delay(40);
+            }
+
+            if (_questionShowing || QuestionOverlay.IsVisible) return;
+            if (!IsReadyForQuestion()) return;
+
+            QuestionOverlay.ZIndex = 100;
+            QuestionOverlay.HorizontalOptions = LayoutOptions.Fill;
+            QuestionOverlay.VerticalOptions = LayoutOptions.Fill;
+
+            ShowQuestion();
+        });
+    }
+
     // ====== вопрос ======
     private void ShowQuestion()
     {
         if (_questionShowing) return;
         _questionShowing = true;
 
-        QuestionOverlay.IsVisible = true;  // включаем сразу (в зоне SourcePanel)
+        QuestionOverlay.IsVisible = true; // сразу поверх SourcePanel
         _timerRunning = false;
 
         _currentQuestion = _questions[_rnd.Next(_questions.Count)];
@@ -425,7 +447,6 @@ public partial class GamePage : ContentPage
         _timerRunning = true;
         StartTimerLoop();
 
-        // финал при LevelsCount
         if (_levelIndex == LevelsCount - 1)
         {
             _timerRunning = false;
@@ -457,7 +478,7 @@ public partial class GamePage : ContentPage
         _sw.Stop();
 
         var total = _sw.Elapsed;
-        var reached = _levelIndex + 1; // 1..LevelsCount
+        var reached = _levelIndex + 1;
 
         ScoreService.Add(new ScoreItem
         {
@@ -474,7 +495,7 @@ public partial class GamePage : ContentPage
         await Shell.Current.GoToAsync("//rating");
     }
 
-    // ====== «Назад» (безопасный откат) ======
+    // ====== Undo (без ручной правки счётчика — события всё сделают) ======
     private void BtnUndo_Clicked(object? sender, EventArgs e)
     {
         if (QuestionOverlay.IsVisible) return;
@@ -482,21 +503,20 @@ public partial class GamePage : ContentPage
 
         var a = _undo.Pop();
 
-        // 1) убрать наш кусок из новой цели (или где бы он ни был)
+        // убрать наш кусок из новой цели
         if (a.ToCell.Content == a.Piece) a.ToCell.Content = null;
         else DetachFromParent(a.Piece);
 
-        // 2) вернуть вытеснённого обратно в эту цель
+        // вернуть вытеснённого обратно в эту цель
         if (a.Displaced != null)
         {
             DetachFromParent(a.Displaced);
             a.ToCell.Content = a.Displaced;
         }
 
-        // 3) вернуть наш кусок туда, откуда он пришёл
+        // вернуть наш кусок туда, откуда он пришёл
         if (a.From == FromKind.Target && a.FromCell != null)
         {
-            if (a.FromCell.Content is View v && v != a.Piece) DetachFromParent(v);
             a.FromCell.Content = a.Piece;
         }
         else
@@ -505,17 +525,18 @@ public partial class GamePage : ContentPage
         }
 
         if (_selectedPiece == a.Piece) { _selectedPiece.Opacity = 1; _selectedPiece = null; }
+
+        Device.BeginInvokeOnMainThread(TryShowQuestionIfSolved);
     }
 
-    // ====== вспомогалки (безопасные) ======
+    // ====== вспомогалки ======
     private void PlaceInSourcePanel(Image img)
     {
-        if (img.Parent == SourcePanel) return; // уже там
+        if (img.Parent == SourcePanel) return;
         DetachFromParent(img);
         SourcePanel.Children.Add(img);
     }
 
-    // универсальный безопасный detach (Grid/Flex/Border)
     private static void DetachFromParent(View v)
     {
         if (v.Parent is ContentView cv)
@@ -529,7 +550,6 @@ public partial class GamePage : ContentPage
                 layout.Children.Remove(v);
             return;
         }
-        // если родителей нет — ок
     }
 
     private MoveAction CaptureActionBeforePlace(Image piece, Border to)
@@ -567,7 +587,7 @@ public partial class GamePage : ContentPage
             PlaceInSourcePanel(displaced);
     }
 
-    // ====== нарезка изображения (оптимизировано) ======
+    // ====== нарезка изображения ======
     private static List<byte[]> SplitAndResizeToBytes(Stream input, int rows, int cols, int pieceSizePx)
     {
         using var original = SKBitmap.Decode(input);

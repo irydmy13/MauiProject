@@ -28,4 +28,10 @@ public partial class RatingPage : ContentPage
             _items.Clear();
         }
     }
+
+    private async void GoMenu_Clicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//menu");
+    }
+
 }

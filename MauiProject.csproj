@@ -60,8 +60,18 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiImage Remove="Resources\Images\music_off.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiAsset Include="Resources\Images\music_off.png" />
+	  <MauiAsset Include="Resources\Images\music_on.png" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
+		<PackageReference Include="Plugin.Maui.Audio" Version="4.0.0" />
 		<PackageReference Include="SkiaSharp" Version="3.119.1" />
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.1" />
 	</ItemGroup>

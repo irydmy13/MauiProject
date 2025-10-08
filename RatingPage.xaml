@@ -30,5 +30,6 @@
         </CollectionView>
 
         <Button Text="Очистить рейтинг" Style="{StaticResource BtnGhost}" Clicked="Clear_Clicked" />
+        <Button Text="В меню" Style="{StaticResource BtnGhost}" Clicked="GoMenu_Clicked" />
     </VerticalStackLayout>
 </ContentPage>
