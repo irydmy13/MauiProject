@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="MauiProject.MainPage"
+    x:Class="MauiProject.MenuPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Меню"
@@ -9,13 +9,13 @@
     <ContentPage.Resources>
         <ResourceDictionary>
 
-            <!-- Стиль большой кнопки меню -->
+            <!-- Большие кнопки меню (как у тебя было) -->
             <Style x:Key="MenuButton" TargetType="Button">
                 <Setter Property="HeightRequest" Value="56" />
                 <Setter Property="CornerRadius" Value="16" />
                 <Setter Property="FontSize" Value="18" />
                 <Setter Property="TextColor" Value="White" />
-                <Setter Property="Background" >
+                <Setter Property="Background">
                     <Setter.Value>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                             <GradientStop Color="#6A5AE0" Offset="0" />
@@ -29,24 +29,9 @@
                         <Shadow Brush="#77000000" Offset="0,4" Radius="12" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="VisualStateManager.VisualStateGroups">
-                    <Setter.Value>
-                        <VisualStateGroupList>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal" />
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Property="Scale" Value="0.98"/>
-                                        <Setter Property="Opacity" Value="0.92"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateGroupList>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
-            <!-- Полупрозрачная карточка по центру -->
+            <!-- Карточка под кнопками (как у тебя было) -->
             <Style x:Key="Card" TargetType="Frame">
                 <Setter Property="Padding" Value="24" />
                 <Setter Property="CornerRadius" Value="24" />
@@ -59,20 +44,22 @@
     </ContentPage.Resources>
 
     <Grid>
-        <!-- Кнопка-иконка музыки в правом верхнем углу -->
-        <Grid Padding="16"
-              RowDefinitions="Auto,*"
-              ColumnDefinitions="*,Auto">
+        <Grid Padding="16" RowDefinitions="Auto,*" ColumnDefinitions="*,Auto">
+
+            <!-- КНОПКА МУЗЫКИ: увеличена, без чёрного круга -->
             <ImageButton Grid.Row="0" Grid.Column="1"
                          x:Name="BtnMusic"
                          Source="music_on.png"
-                         BackgroundColor="#55000000"
-                         CornerRadius="24"
-                         Padding="10"
+                         WidthRequest="64" HeightRequest="64"
+                         Padding="6"
+                         Aspect="AspectFit"
+                         BackgroundColor="Transparent"
+                         CornerRadius="0"
                          Clicked="BtnMusic_Clicked" />
 
             <!-- Центральная карточка с кнопками -->
-            <Frame Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Card}"
+            <Frame Grid.Row="1" Grid.ColumnSpan="2"
+                   Style="{StaticResource Card}"
                    VerticalOptions="Center" HorizontalOptions="Center">
                 <VerticalStackLayout Spacing="14" WidthRequest="300">
                     <Label Text="ПАЗЛ-КВЕСТ"

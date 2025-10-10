@@ -1,5 +1,8 @@
-﻿using SkiaSharp.Views.Maui.Controls.Hosting;
+﻿using MauiProject.Services;
+using Microsoft.Maui;
+using Microsoft.Maui.Hosting;
 using Plugin.Maui.Audio;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MauiProject;
 
@@ -11,20 +14,19 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
-            .UseSkiaSharp() // обязательная строка
+            .UseSkiaSharp()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // Audio DI
+        // аудио и наш сервис музыки
         builder.Services.AddSingleton(AudioManager.Current);
         builder.Services.AddSingleton<IMusicService, MusicService>();
 
-        // (опц) страницы через DI, чтобы прокинуть сервис в конструктор
-        builder.Services.AddTransient<MainPage>();
-
+        // страницы через DI (меню берём из DI)
+        builder.Services.AddTransient<MenuPage>();
 
         return builder.Build();
     }

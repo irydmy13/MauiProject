@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="MauiProject.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:pages="clr-namespace:MauiProject"
-    FlyoutBehavior="Disabled">
+    xmlns:local="clr-namespace:MauiProject">
 
-    <ShellContent Route="menu"   ContentTemplate="{DataTemplate pages:MenuPage}" />
-    <ShellContent Route="game"   ContentTemplate="{DataTemplate pages:GamePage}" />
-    <ShellContent Route="rating" ContentTemplate="{DataTemplate pages:RatingPage}" />
-
+    <TabBar>
+        <ShellContent Route="menu"   ContentTemplate="{DataTemplate local:MenuPage}" />
+        <ShellContent Route="game"   ContentTemplate="{DataTemplate local:GamePage}" />
+        <ShellContent Route="rating" ContentTemplate="{DataTemplate local:RatingPage}" />
+    </TabBar>
 </Shell>

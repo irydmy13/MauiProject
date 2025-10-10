@@ -60,7 +60,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Remove="MainPage.xaml.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiImage Remove="Resources\Images\music_off.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiXaml Remove="MainPage.xaml" />
 	</ItemGroup>
 
 	<ItemGroup>

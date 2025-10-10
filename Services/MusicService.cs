@@ -18,35 +18,20 @@ public sealed class MusicService : IMusicService
 
     public bool IsOn => _player?.IsPlaying == true;
 
-    public MusicService(IAudioManager audio)
-    {
-        _audio = audio;
-    }
+    public MusicService(IAudioManager audio) => _audio = audio;
 
     public async Task InitAsync()
     {
         if (_player != null) return;
 
-        // menu_bgm.mp3 положи в Resources/Raw/
+        // помести файл menu_bgm.mp3 в Resources/Raw/
         using var stream = await FileSystem.OpenAppPackageFileAsync("menu_bgm.mp3");
         _player = _audio.CreatePlayer(stream);
         _player.Loop = true;
-        _player.Volume = 0.45; // громкость по умолчанию
+        _player.Volume = 0.45;
     }
 
-    public void Play()
-    {
-        if (_player == null) return;
-        if (!_player.IsPlaying) _player.Play();
-    }
-
-    public void Pause()
-    {
-        if (_player?.IsPlaying == true) _player.Pause();
-    }
-
-    public void Toggle()
-    {
-        if (IsOn) Pause(); else Play();
-    }
+    public void Play() { if (_player is { IsPlaying: false }) _player.Play(); }
+    public void Pause() { if (_player?.IsPlaying == true) _player.Pause(); }
+    public void Toggle() { if (IsOn) Pause(); else Play(); }
 }

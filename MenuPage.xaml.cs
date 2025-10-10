@@ -2,11 +2,11 @@ using MauiProject.Services;
 
 namespace MauiProject;
 
-public partial class MainPage : ContentPage
+public partial class MenuPage : ContentPage
 {
     private readonly IMusicService _music;
 
-    public MainPage(IMusicService music)
+    public MenuPage(IMusicService music)
     {
         InitializeComponent();
         _music = music;
@@ -21,9 +21,7 @@ public partial class MainPage : ContentPage
     }
 
     private void UpdateMusicIcon()
-    {
-        BtnMusic.Source = _music.IsOn ? "music_on.png" : "music_off.png";
-    }
+        => BtnMusic.Source = _music.IsOn ? "music_on.png" : "music_off.png";
 
     private void BtnMusic_Clicked(object sender, EventArgs e)
     {
@@ -32,21 +30,15 @@ public partial class MainPage : ContentPage
     }
 
     private async void NewGame_Clicked(object sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("//game");
-    }
+        => await Shell.Current.GoToAsync("//game");
 
     private async void Rating_Clicked(object sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("//rating");
-    }
+        => await Shell.Current.GoToAsync("//rating");
 
     private void Exit_Clicked(object sender, EventArgs e)
     {
 #if ANDROID
         Android.OS.Process.KillProcess(Android.OS.Process.MyPid());
-#elif WINDOWS
-        Application.Current?.Quit();
 #else
         Application.Current?.Quit();
 #endif
